@@ -1,0 +1,61 @@
+name: Python application
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.9'  # Cambia a la versión de Python que desees
+          
+      - name: Cache Python dependencies
+        uses: actions/cache@v2
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run tests
+        run: |
+          pytest --cov=. --cov-report=xml  # Agrega cobertura de código y genera un informe XML
+
+      - name: Lint with flake8
+        run: |
+          pip install flake8  # Instala flake8 si no está en requirements.txt
+          flake8 .  # Linting de todo el proyecto, ajusta si es necesario
+
+      - name: Format with black
+        run: |
+          pip install black  # Instala black si no está en requirements.txt
+          black .  # Formatea el código
+
+      - name: Upload test coverage report
+        uses: actions/upload-artifact@v2
+        with:
+          name: coverage-report
+          path: coverage.xml  # Asegúrate de que pytest genere este archivo
+
+      - name: Notify on failure
+        if: failure()
+        run: |
+          echo "Build failed, please check the logs."
